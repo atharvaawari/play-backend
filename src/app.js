@@ -20,6 +20,10 @@ app.use(express.urlencoded({extended: true}))
 app.use(express.static("public")) 
 app.use(cookieParser())
 
+//midleware -> checking or logic implement before response to the request is a middleware
+//ex--> chek if user is login like wise
+//(error, req, res, next)
+//the middleware has a "next" flag which passes the process to another api's if it is not consisting of next then it is indicating the operation end of process
 
 
 
