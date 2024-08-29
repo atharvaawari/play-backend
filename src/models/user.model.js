@@ -42,7 +42,7 @@ const userSchema = new Schema(
             type: String,
             required: [true, 'password is required']
         },
-        refreshToken: {    //
+        refreshToken: {    
             type: String
         },
 
@@ -52,7 +52,12 @@ const userSchema = new Schema(
 
 //used pre middleware for when i modiefied the password or add it will verfied using core bcrypt lib
 //bcrypt library helps us to hash passwords
-// pre is a hook of moongoose exexute just before completing operation 
+// pre is a hook of moongoose exexute just before completing event like ("save", etc.) 
+//As we need context of password feild from the Schema class we dont get the context of this inside arrow function 
+//Also we are using a middleware so we get next and have to execute it to pass for another oprations
+//we use isModified inbuilt function for only run for when password got change
+
+//Encrypt the password here
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next()
 
@@ -60,10 +65,12 @@ userSchema.pre("save", async function (next) {
     next()
 })
 
+//adding custome methods for check password while login or while accessing authenticate data
 userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password)
 }
 
+//adding one more methods to generate AceessToken
 userSchema.methods.generateAccessToken = function () {
     return jwt.sign(
         {
@@ -83,9 +90,9 @@ userSchema.methods.generateRefreshToken = function () {
         {
             _id: this.id
         },
-        process.env.REFRESH_TOKON_SECRET,
+        process.env.REFRESH_TOKEN_SECRET,
         {
-            expiresIn: process.env.REFRESH_TOKON_EXPIRY
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY
         }
     )
 }
