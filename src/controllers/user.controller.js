@@ -17,24 +17,24 @@ const registerUser = asyncHandler(async (req, res) => {
   //return response 
 
 
-  const { username, email, fullName, password } = req.body;
+  const { userName, email, fullName, password } = req.body;
 
   if(
-    [username, email, fullName, password].some((field)=> field?.trim() === "")  //some return true if any of the field is empty
+    [userName, email, fullName, password].some((field)=> field?.trim() === "")  //some return true if any of the field is empty
   ){
       throw new ApiError(400, "All fields are required")
-  }
+  };
 
-  const existedUser = User.findOne({
-    $or: [{ username }, { email }]
-  })
+  const existedUser = await User.findOne({
+    $or: [{ userName }, { email }]
+  });
 
   if(existedUser) throw new ApiError(409, "User already existed");
 
-  console.log("body.file:", req.file);
-  const avatarLocalPath = req.file?.avatar[0]?.path;
-  const coverImgLocalPath = req.file?.coverImage[0]?.path;
-
+  const avatarLocalPath = req.files?.avatar[0]?.path;
+  const coverImgLocalPath = req.files?.coverImage[0]?.path;
+  
+  console.log("req.file:", req.files);
   if(!avatarLocalPath) throw new ApiError(400, "Avatar file is required");
 
   //upload on Cloudinary
@@ -49,19 +49,21 @@ const registerUser = asyncHandler(async (req, res) => {
     coverImage: coverImage?.url || "",
     email,
     password,
-    username: username.toLowerCase()
-  })
+    userName: userName.toLowerCase()
+  });
 
   //check for user creation & removing unwanted fields using select
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken"
   );
 
+  //check for user creation
   if(!createdUser) throw new ApiError(500, "Registering user failed");
 
+  //return created user 
   return res.status(201).json(
     new ApiResponse(200, createdUser, "User registered Successfully!!!")
-  )
+  );
 
 })
 
