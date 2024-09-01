@@ -18,7 +18,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
   const { userName, email, fullName, password } = req.body;
-
+  // console.log("req.body", req.body);
+  
   if(
     [userName, email, fullName, password].some((field)=> field?.trim() === "")  //some return true if any of the field is empty
   ){
@@ -32,9 +33,14 @@ const registerUser = asyncHandler(async (req, res) => {
   if(existedUser) throw new ApiError(409, "User already existed");
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coverImgLocalPath = req.files?.coverImage[0]?.path;
+  // const coverImgLocalPath = req.files?.coverImage[0]?.path;  //in this line the quemark is checking and directly set value in variable
+
+  let coverImgLocalPath;
+  if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+    coverImgLocalPath = req.files.coverImage[0].path;
+  }  
   
-  console.log("req.file:", req.files);
+  // console.log("req.file:", req.files, "coverImgLocalPath", coverImgLocalPath);
   if(!avatarLocalPath) throw new ApiError(400, "Avatar file is required");
 
   //upload on Cloudinary
