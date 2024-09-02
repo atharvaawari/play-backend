@@ -65,7 +65,7 @@ userSchema.pre("save", async function (next) {
     next()
 })
 
-//adding custome methods for check password while login or while accessing authenticate data
+//adding custome methods for check password whilelo gin or while accessing authenticate data
 userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password)
 }
@@ -98,4 +98,4 @@ userSchema.methods.generateRefreshToken = function () {
 }
 
 
-export const User = mongoose.model("User", userSchema)
+export const User = mongoose.model("User", userSchema);
