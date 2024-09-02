@@ -140,8 +140,36 @@ const loginUser = asyncHandler(async (req, res) => {
       },
       "User logged In successfully!!!"
     )
-  )
+  );
 
+});
+
+// pass new: true to get response of updated refreshToken
+const logoutUser = asyncHandler(async (req, res)=>{
+  //for logout we need to clear refreshToken from DB
+  //we are getting user _id from the middleware auth
+  
+  await User.findByIdAndUpdate(req.user._id,
+    {
+      $set: {
+        refreshToken: undefined,
+      }, 
+    },
+    {
+      new: true
+    }
+  );
+
+  const options = {
+    httpOnly : true,  //for cookies can only modify by server
+    secure: true 
+  }
+
+  return res
+  .status(200)
+  .clearCookie("accessToken", options)
+  .clearCookie("refreshToken", options);
+  
 })
 
-export { registerUser, loginUser }
+export { registerUser, loginUser, logoutUser }
