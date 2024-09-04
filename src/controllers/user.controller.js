@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { verify } from "jsonwebtoken";
 
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -20,7 +21,6 @@ const generateAccessAndRefreshToken = async (userId) => {
     throw new ApiError(500, "generating refresh and access token failed");
   }
 }
-
 
 const registerUser = asyncHandler(async (req, res) => {
   // registerUser
@@ -97,17 +97,20 @@ const loginUser = asyncHandler(async (req, res) => {
   //check for fields are empty or user is register in database or not[check user]
   //check password
   //asign the refresh and access token to user login save it on cokkies
-  //check in the cookies for access token or refresh 
+  //check in the cookies for access token or refresh
+  //response of access & refresh token and loggedInUser  
 
   const { email, userName, password } = req.body;
+  console.log("req.body", req.body);
 
-  if (!email || !userName) {
+  //this is how check for data with or operator
+  if (!(email || userName)) {
     throw new ApiError(400, "username or password is required");
   }
 
   // mogoDb operators are used for conditionally serch or any other operations 
   const user = await User.findOne({
-    $or: [{ userName, email }]
+    $or: [{ userName }, { email }]
   });
 
   if (!user) throw new ApiError(404, "User does not exist");
@@ -116,44 +119,44 @@ const loginUser = asyncHandler(async (req, res) => {
 
   if (!isPasswordValid) throw new ApiError(401, "Invalid user credentials");
 
-  const {accessToken, refreshToken} =  await generateAccessAndRefreshToken(user._id);
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 
-  const loggedInUser = User.findById(user._id).select("-password -refreshToken");
+  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
 
   // cookies are modifiable from client side for that reason we have to define options for cookies 
   const options = {
-    httpOnly : true,  //for cookies can only modify by server
-    secure: true 
+    httpOnly: true,  //for cookies can only modify by server
+    secure: true
   }
 
   //sending response of accessToken and refreshToken is optional if user want to set in localstorage etc 
 
   return res
-  .status(200)
-  .cookie("accessToken", accessToken, options)
-  .cookie("refreshToken", refreshToken, options)
-  .json(
-    new ApiResponse(
-      200,
-      {
-        user: loggedInUser, accessToken, refreshToken
-      },
-      "User logged In successfully!!!"
-    )
-  );
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user: loggedInUser, accessToken, refreshToken
+        },
+        "User logged In successfully!!!"
+      )
+    );
 
 });
 
 // pass new: true to get response of updated refreshToken
-const logoutUser = asyncHandler(async (req, res)=>{
+const logoutUser = asyncHandler(async (req, res) => {
   //for logout we need to clear refreshToken from DB
   //we are getting user _id from the middleware auth
-  
+
   await User.findByIdAndUpdate(req.user._id,
     {
       $set: {
         refreshToken: undefined,
-      }, 
+      },
     },
     {
       new: true
@@ -161,15 +164,58 @@ const logoutUser = asyncHandler(async (req, res)=>{
   );
 
   const options = {
-    httpOnly : true,  //for cookies can only modify by server
-    secure: true 
+    httpOnly: true,  //for cookies can only modify by server
+    secure: true
   }
 
   return res
-  .status(200)
-  .clearCookie("accessToken", options)
-  .clearCookie("refreshToken", options);
-  
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged Out"));
+
 })
+
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incommingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+  if (!incommingRefreshToken) throw new ApiError(401, "unauthorized request");
+
+  try {
+    const decodedToken = verify(incommingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+    const user = await User.findById(decodedToken?._id)
+
+    if (!user) throw new ApiError(401, "invalid refresh token");
+
+    if (incommingRefreshToken !== user?.refreshToken) {
+      throw new ApiError(401, "Refresh token is expired or used")
+    }
+
+    const options = {
+      httpOnly: true,
+      secure: true
+    }
+
+    const { accessToken, newRefreshToken } = await generateAccessAndRefreshToken(user._id)
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", newRefreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          { accessToken, refreshToken: newRefreshToken },
+          "AccessToken refresh successfully"
+        )
+      )
+  } catch (error) {
+    if(error) throw new res.ApiError(401, error?.message || "Invalid refresh token" )
+  }
+
+})
+
 
 export { registerUser, loginUser, logoutUser }
