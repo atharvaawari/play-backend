@@ -67,6 +67,7 @@ userSchema.pre("save", async function (next) {
 
 //adding custome methods for check password whilelo gin or while accessing authenticate data
 userSchema.methods.isPasswordCorrect = async function (password) {
+
     return await bcrypt.compare(password, this.password)
 }
 
