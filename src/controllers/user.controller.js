@@ -40,7 +40,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // console.log("req.body", req.body);
 
   if (
-    [userName, email, fullName, password].some((field) => field?.trim() === "")  //some return true if any of the field is empty
+    [userName, email, fullName, password].some((field) => field?.trim() === "")  //some return true if any of the field is not empty
   ) {
     throw new ApiError(400, "All fields are required")
   };
@@ -86,9 +86,11 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!createdUser) throw new ApiError(500, "Registering user failed");
 
   //return created user 
-  return res.status(201).json(
-    new ApiResponse(200, createdUser, "User registered Successfully!!!")
-  );
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(200, createdUser, "User registered Successfully!!!")
+    );
 
 })
 
@@ -225,7 +227,7 @@ const changeCurrentUserPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
   const user = await User.findById(req.user?._id);
-  
+
   const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
   if (!isPasswordCorrect) throw new ApiError(400, "Invalid old password");
