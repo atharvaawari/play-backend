@@ -297,11 +297,11 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
   const coverImageLocalPath = req.file?.path
 
-  if (!coverImageLocalPath) return new ApiError(400, "Cover image file is missing");
+  if (!coverImageLocalPath) throw new ApiError(400, "Cover image file is missing");
 
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
-  if (!coverImage.url) return new ApiError(400, "Error while uploading cover image");
+  if (!coverImage.url) throw new ApiError(400, "Error while uploading cover image");
 
   const user = await User.findByIdAndUpdate(
     req.user?._id,
