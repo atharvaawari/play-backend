@@ -7,6 +7,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
+
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
   //  todo:get all videos based on query, sort, pagination
@@ -207,7 +208,25 @@ const deleteVideo = asyncHandler(async (req, res) => {
 })
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
-  const { videoId } = req.params
+  const { videoId } = req.params;
+
+  if (!videoId) throw new ApiError(404, "Video not found");
+
+  const video = await Video.findById(videoId);
+
+  if (!video) throw new ApiError(404, "Video not found in database");
+
+  const updatedVideo = Video.findByIdAndUpdate(
+    videoId,
+    { $set: { ispublished: !video.ispublished } },
+    { new: true }
+  );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, updatedVideo, "video published successfully!")
+    );
 
 })
 
