@@ -50,25 +50,35 @@ const updateTweet = asyncHandler(async (req, res) => {
   const { content } = req.body;
   const { tweetId } = req.params;
 
-  if(!content) throw new ApiError(400,"All fields are required");
-  
-  if(!tweetId) throw new ApiError(400,"tweetId not found");
-  
-  const updatedTweet = await Tweet.findByIdAndUpdate( 
+  if (!content) throw new ApiError(400, "All fields are required");
+
+  if (!tweetId) throw new ApiError(400, "tweetId not found");
+
+  const updatedTweet = await Tweet.findByIdAndUpdate(
     tweetId,
     {
-      $set:{
+      $set: {
         content
       }
     },
-    {new: true} 
+    { new: true }
   )
 
-    return res.status(200, updatedTweet, "Tweet updated successfully!");
+  return res.status(200, updatedTweet, "Tweet updated successfully!");
 })
 
 const deleteTweet = asyncHandler(async (req, res) => {
   //Todo: delete tweet
+
+  const { tweetId } = req.params;
+
+  const deletedTweet = await Tweet.findByIdAndDelete(tweetId)
+
+  if (!deletedTweet) throw new ApiError(401, "failed to delete tweet");
+
+  return res.status(200).json(
+    new ApiResponse(200, tweetId, "Tweet deleted successfully")
+  );
 })
 
 
