@@ -5,9 +5,9 @@ import {
   publishAVideo,
   updateVideo,
 
-} from "../controllers/video.controller";
-import { verifyJWT } from "../middleware/auth.middleware";
-import { upload } from "../middleware/multer.middleware";
+} from "../controllers/video.controller.js";
+import { verifyJWT } from "../middleware/auth.middleware.js";
+import { upload } from "../middleware/multer.middleware.js";
 
 const router = Router();
 router.use(verifyJWT); //Applied verifyJWT middlewares to all routers

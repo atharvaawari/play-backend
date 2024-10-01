@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import { Tweet } from "../models/tweet.model";
 import { User } from "../models/user.model";
 import { ApiError } from "../utils/ApiError";
