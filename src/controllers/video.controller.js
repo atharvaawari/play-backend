@@ -4,12 +4,12 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
+import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
+import { validateObjectId } from "../utils/validateObjectId.js";
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
-   //  todo:get all videos based on query, sort, pagination
+  //  todo:get all videos based on query, sort, pagination
   // get data from the req.query 
   // verify the data is available
   //setup the pagination and sorting
@@ -18,16 +18,17 @@ const getAllVideos = asyncHandler(async (req, res) => {
   const {
     page = 1,
     limit = 10,
-    query,
+    query = "",
     sortBy = "createdAt",
     sortType = "desc",
+    userId
   } = req.query;
-  const userId = req.user?._id;
+  const user = req.user?._id;
 
   try {
 
     // if (!query) throw new ApiError(401, "query is missing");
-    if (!userId) throw new ApiError(401, "Unauthoried user");
+    if (!user) throw new ApiError(401, "Unauthoried user");
 
     const pageNumber = parseInt(page, 10) || 1;
     const limitNumber = parseInt(limit, 10) || 10;
@@ -36,8 +37,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
     const sortDirection = {};
 
     sortDirection[sortBy] = sortType === 'asc' ? 1 : -1;
-
-    const pipeline = []; //creating aggregation pipeline
 
     const filter = {}; //Match (filtering based on query or userId)
 
@@ -50,6 +49,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     }
 
     const list = await Video.find(filter)
+      .sort(sortDirection)
       .limit(limitNumber)
       .skip(parseInt(offset));
 
@@ -62,7 +62,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
       .status(200)
       .json(
         200,
-        new ApiResponse(200, 
+        new ApiResponse(200,
           { videos: list, totalPages, currentPage: parseInt(page) }
           , "All video pages are fetched successfully!")
       );
@@ -73,50 +73,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
   }
 
 })
-
-const getAllVideoj = asyncHandler(async (req, res) => {
-  const {
-    page = 1,
-    limit = 10,
-    query,
-    sortBy = "createdAt",
-    sortType = "desc",
-    userId,
-  } = req.query;
-  const offset = page * limit - limit;
-
-  // Define sort options based on sortBy and sortType
-  const sortOptions = {};
-  sortOptions[sortBy] = sortType === "asc" ? 1 : -1;
-
-  // Build filter query
-  const filter = query
-    ? {
-        title: { $regex: query, $options: "i" },
-      }
-    : {};
-
-  try {
-    const list = await Video.find(filter)
-      .limit(parseInt(limit))
-      .skip(parseInt(offset));
-
-    const totalVideos = await Video.countDocuments(filter);
-    const totalPages = Math.ceil(totalVideos / limit);
-
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          { videos: list, totalPages, currentPage: pageNumber },
-          "Videos fetched successfully"
-        )
-      );
-  } catch (error) {
-    throw new ApiError(500, "Error fetching videos");
-  }
-});
 
 const publishAVideo = asyncHandler(async (req, res) => {
   try {
@@ -187,6 +143,9 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
   } catch (error) {
 
+    if (videoFile) await deleteFromCloudinary(videoFile.public_id);
+    if (thumbnail) await deleteFromCloudinary(thumbnail.public_id);
+
     throw new ApiError(400, `video publishing failed, ${error?.message}`);
   }
 
@@ -194,11 +153,13 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
 const getVideoById = asyncHandler(async (req, res) => {
   //TODO: get video by id
-  const { videoId } = req.params
+  const { videoId } = req.params;
 
-  if (!videoId) throw new ApiError("invalid video request");
+  validateObjectId(videoId, "video");
 
   const video = await Video.findById(videoId);
+
+  if (!video) throw new ApiError(404, "Video not found");
 
   return res
     .status(200)
@@ -215,8 +176,9 @@ const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const thumbnailFilePath = req.file?.path;
 
-  if (!title || !description) throw new ApiError(401, "data too update missing");
-  if (!videoId) throw new ApiError(400, "update video data failed");
+  validateObjectId(videoId, "video");
+
+  // if (!title || !description) throw new ApiError(401, "data too update missing");
   if (!thumbnailFilePath) throw new ApiError(400, "Thumbnail file is missing");
 
   const thumbnail = await uploadOnCloudinary(thumbnailFilePath);
@@ -247,10 +209,11 @@ const deleteVideo = asyncHandler(async (req, res) => {
   //TODO: delete video
   const { videoId } = req.params;
 
+  validateObjectId(videoId, "video");
+
   if (!videoId) throw new ApiError(400, "failed to delete video");
 
-  const deletedVideo = Video.findByIdAndDelete(videoId);
-
+  const deletedVideo = await Video.findByIdAndDelete(videoId);
   if (!deletedVideo) throw new ApiError(400, "failed deleting video");
 
   return res

@@ -22,7 +22,7 @@ import videoRouter from './routes/video.routes.js';
 
 
 //routes-declaration
-app.use('/api/users', userRouter );
+app.use('/api/users', userRouter);
 app.use('/api/video', videoRouter);
 
 
