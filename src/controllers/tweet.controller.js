@@ -3,6 +3,7 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import {checkOwnership} from "../utils/checkOwnership.js";
 
 const createTweet = asyncHandler(async (req, res) => {
   //Todo: create Tweet
@@ -63,10 +64,15 @@ const updateTweet = asyncHandler(async (req, res) => {
   //Todo: update tweet
   const { content } = req.body;
   const { tweetId } = req.params;
+  const { user } = req.user?._id;
 
   if (!content) throw new ApiError(400, "All fields are required");
 
   if (!tweetId) throw new ApiError(400, "tweetId not found");
+
+  const tweet = await Tweet.findById(tweetId);
+
+  checkOwnership(user, tweet.owner);
 
   const updatedTweet = await Tweet.findByIdAndUpdate(
     tweetId,
