@@ -91,14 +91,9 @@ const updateTweet = asyncHandler(async (req, res) => {
 
   if (!tweetId) throw new ApiError(400, "tweetId not found");
 
-  const tweet = await Tweet.findById(tweetId);
-
-  checkOwnership(user, tweet.owner);
 
   const updatedTweet = await Tweet.findByIdAndUpdate(
-    {
-      _id: new mongoose.Types.ObjectId(tweetId)
-    },
+    tweetId,
     {
       $set: {
         content: newContent,
@@ -106,7 +101,8 @@ const updateTweet = asyncHandler(async (req, res) => {
     },
     { new: true }
   )
-
+  if(!updatedTweet) throw new ApiError(404, "failed to update tweet");
+  
   return res
     .status(200)
     .json(
