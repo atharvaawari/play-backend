@@ -231,11 +231,15 @@ const getVideoById = asyncHandler(async (req, res) => {
 
   const video = await Video.aggregate([
     {
+      //return the document where the _id matches the videoId from the request parameters.
+      //converts the videoId (string) into a mongoose.Types.ObjectId 
       $match: {
         _id: new mongoose.Types.ObjectId(videoId)
       }
     },
     {
+      // This performs a "left outer join" with the users collection.
+      // It matches the owner field in the Video collection with the _id in the users collection.
       $lookup: {
         from: "users",
         localField: "owner",
@@ -253,6 +257,7 @@ const getVideoById = asyncHandler(async (req, res) => {
       },
     },
     {
+      //This step ensures that owner is a single object rather than an array.
       $unwind: "$owner"
     },
     {
