@@ -15,7 +15,9 @@ const getVideoComments = asyncHandler(async (req, res)=>{
 
   const comments = await Comment.aggregate([
     {
-      $match: new mongoose.Types.ObjectId(videoId) 
+      $match: {
+        video: new mongoose.Types.ObjectId(videoId)
+      } 
     },
     {
       $lookup:{
@@ -25,15 +27,17 @@ const getVideoComments = asyncHandler(async (req, res)=>{
         as:"owner",
         pipeline:[
           { 
+           $project:{
             userName: 1,
             fullName: 1,
-            avatar: 1    
+            avatar: 1  
+           }  
           }
         ]
       }
     },
     {
-      $unwind:"owner"
+      $unwind:"$owner"
     },
     {
       $lookup: {
@@ -63,7 +67,6 @@ const getVideoComments = asyncHandler(async (req, res)=>{
   return res.status(200).json( new ApiResponse(200, comments, "Successfully fetched comments!"));
 
 })
-
 
 const addComment = asyncHandler(async (req, res)=>{
   // TODO: Add a comment to a video 
@@ -111,7 +114,6 @@ const updateComment = asyncHandler(async (req, res)=>{
   res.status(200).json( new ApiResponse(200, newComment, "successfully updated comment!"));
 
 })
-
 
 const deleteComment = asyncHandler(async (req, res)=> {
   //TODO: delete a comment
