@@ -141,37 +141,69 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 
   const playlist = await Playlist.findById(playlistId);
 
-  if(!playlist) throw new ApiError(401, "playlist not found");
+  if (!playlist) throw new ApiError(401, "playlist not found");
 
   const isVideoInPlaylist = playlist.videos.include(videoId);
 
-  if(!isVideoInPlaylist) throw new ApiError(404, "Video not found.");
+  if (!isVideoInPlaylist) throw new ApiError(404, "Video not found.");
 
   await Playlist.findByIdAndUpdate(
     playlistId,
-    { 
-      $pull: {videos: videoId}
-    }, // Pull removes the videoId from videos array
-    { new: true} // Return the updated document
+    {
+      $pull: { videos: videoId }
+    }, // Pull operator removes the videoId from videos array
+    { new: true } // Return the updated document
   );
 
   res
-  .status(200)
-  .json( 
-    new ApiResponse(200, "Video removed from playlist successfully")
-  );
+    .status(200)
+    .json(
+      new ApiResponse(200, "Video removed from playlist successfully")
+    );
 
 })
 
 const deletePlaylist = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
   //TODO: delete playlist
+
+  if (!playlistId) throw new ApiError(401, "playlist not found");
+
+  const deletedPlaylist = await Playlist.findByIdAndDelete(playlistId);
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, deletedPlaylist, "Playlist deleted successfully")
+    );
+
 })
 
 const updatePlaylist = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
   const { name, description } = req.body;
   //TODO: update playlist
+
+  if (!name || !description) throw new ApiError(401, "All fields are required");
+
+  if (!playlistId) throw new ApiError(401, "playlist not found");
+
+  const updatedPlaylist = await Playlist.findByIdAndUpdate(
+    playlistId,
+    {
+      $set: {
+        name,
+        description
+      }
+    },
+    { new: true }
+  );
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, updatePlaylist, "Playlist updated successfully")
+    );
 
 })
 
