@@ -16,7 +16,8 @@ const createPlaylist = asyncHandler(async (req, res) => {
 
   const playlist = await Playlist.create({
     name,
-    description
+    description,
+    owner: req.user?._id
   })
 
   return res
@@ -50,54 +51,55 @@ const getUserPlaylist = asyncHandler(async (req, res) => {
 })
 
 const getPlaylistById = asyncHandler(async (req, res) => {
-  const { playlistId } = req.params;
-  //TODO: get playlist by id
 
-  if (!playlistId) throw new ApiError(404, "No playlist found");
+    const { playlistId } = req.params;
+    //TODO: get playlist by id
 
-  const playlist = Playlist.aggregate([
-    {
-      $match: {
-        _id: new mongoose.Types.ObjectId(playlistId)
-      }
-    },
-    {
-      $lookup: {
-        from: "videos",
-        localField: "videos",
-        foreignField: "_id",
-        as: "videos",
-        pipeline: [
-          {
-            $lookup: {
-              from: "users",
-              localField: "owner",
-              foreignField: "_id",
-              as: "owner",
-              pipeline: [
-                {
-                  $project: {
-                    userName: 1,
-                    fullName: 1,
-                    avatar: 1,
+    if (!playlistId) throw new ApiError(404, "No playlist found");
+
+    const playlist = await Playlist.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(playlistId)
+        }
+      },
+      {
+        $lookup: {
+          from: "videos",
+          localField: "videos",
+          foreignField: "_id",
+          as: "videos",
+          pipeline: [
+            {
+              $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [
+                  {
+                    $project: {
+                      userName: 1,
+                      fullName: 1,
+                      avatar: 1,
+                    }
                   }
-                }
-              ]
+                ]
+              }
+            },
+            {
+              $unwind: "$owner",
             }
-          },
-          {
-            $unwind: "$owner",
-          }
-        ]
+          ]
+        }
       }
-    }
-  ]);
+    ]);
 
-  if (!playlist) throw new ApiError(404, "Playlist not found");
+    if (!playlist) throw new ApiError(404, "Playlist not found");
 
-  res.status(200).json(
-    new ApiResponse(200, playlist, "Playlist fetched sucessed!")
-  );
+    res.status(200).json(
+      new ApiResponse(200, playlist, "Playlist fetched sucessed!")
+    );
 
 })
 
@@ -114,11 +116,12 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
   if (!video) throw new ApiError(404, "video not found.");
 
   if (!playlist?.owner.equals(req.user?._id))
+
     throw new ApiError(401, "Unauthorized request");
 
   const updatedPlaylist = await Playlist.findByIdAndUpdate(
     playlist,
-    {
+    { //$addToSet adds a value to an array unless the value is already present
       $addToSet: {
         videos: videoId
       },
