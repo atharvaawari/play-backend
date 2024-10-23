@@ -1,8 +1,7 @@
-import mongoose, { isValidObjectId } from "mongoose";
+import mongoose from "mongoose";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { User } from "../models/user.model.js";
 import { Playlist } from "../models/playlist.model.js";
 import { Video } from "../models/video.model.js";
 
@@ -146,7 +145,9 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 
   if (!playlist) throw new ApiError(401, "playlist not found");
 
-  const isVideoInPlaylist = playlist.videos.include(videoId);
+  console.log("playlist",playlist)
+
+  const isVideoInPlaylist = playlist.videos.includes(videoId);
 
   if (!isVideoInPlaylist) throw new ApiError(404, "Video not found.");
 

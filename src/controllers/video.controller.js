@@ -152,9 +152,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const videoFilePath = req.files?.videoFile[0]?.path;
     const thumbnailFilePath = req.files?.thumbnail[0]?.path;
 
-    console.log("req.body", req.body);
-    console.log("req.filles", req.files);
-
     if ([title, description, videoFilePath, thumbnailFilePath].some(
       (field) => !field?.trim()
     )
@@ -173,7 +170,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
     thumbnail = await uploadOnCloudinary(thumbnailFilePath);
 
     if (!videoFile || !thumbnail) throw new ApiError(400, "Video uploading failed");
-
 
     const video = await Video.create({
       videoFile: videoFile?.url,
