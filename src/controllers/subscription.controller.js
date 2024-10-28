@@ -49,7 +49,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
 
-  if (!channelId) throw new ApiError(401, "Channel not found");
+  if(!mongoose.isValidObjectId(channelId)) throw new ApiError(400, "Invalid Channel Id");
 
   const subscribers = await Subscription.aggregate([
     {
@@ -79,7 +79,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     }
   ]);
 
-  if (!subscribers) throw new ApiError(404, "No subscribers found.");
+  if (!subscribers) throw new ApiError(400, "No subscribers found.");
 
   return res
     .status(200)
@@ -95,7 +95,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
 const getSubscribedChannels = asyncHandler(async (req, res) => {
   const { subscriberId } = req.params;
 
-  if (!subscriberId) throw new ApiError(404, "No channel found");
+  if (!mongoose.isValidObjectId(subscriberId)) throw new ApiError(401, "Invalid subscriber id");
 
   const subscribedChannels = await Subscription.aggregate([
     {
