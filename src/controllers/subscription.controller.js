@@ -103,8 +103,6 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
 
   const { subscriberId } = req.params;
 
-  console.log("subscriberId", req.params);
-
   if (!mongoose.isValidObjectId(subscriberId)) throw new ApiError(401, "Invalid subscriber id");
 
   const subscribedChannels = await Subscription.aggregate([
