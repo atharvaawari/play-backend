@@ -16,3 +16,4 @@ router.route('/t/:tweetId').post(toggleTweetLike);
 router.route('/v/:videoId').post(toggleVideoLike);
 router.route('/').get(getLikedVideos);
 
+export default router

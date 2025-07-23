@@ -49,13 +49,12 @@ const userSchema = new Schema(
     }, { timestamps: true }
 )
 
-
 //used pre middleware for when i modiefied the password or add it will verfied using core bcrypt lib
 //bcrypt library helps us to hash passwords
 // pre is a hook of moongoose exexute just before completing event like ("save", etc.) 
 //As we need context of password feild from the Schema class we dont get the context of this inside arrow function 
 //Also we are using a middleware so we get next and have to execute it to pass for another oprations
-//we use isModified inbuilt function for only run for when password got change
+//we use isModified inbuilt function for only run when password got change
 
 //Encrypt the password here
 userSchema.pre("save", async function (next) {
@@ -65,7 +64,7 @@ userSchema.pre("save", async function (next) {
     next()
 })
 
-//adding custome methods for check password whilelo gin or while accessing authenticate data
+//adding custom methods for check password while login or while accessing authenticate data
 userSchema.methods.isPasswordCorrect = async function (password) {
 
     return await bcrypt.compare(password, this.password)

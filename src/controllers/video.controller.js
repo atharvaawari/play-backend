@@ -83,8 +83,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
   // verify that the id should only userId
   if (userId) {
     matchCondition.owner = new mongoose.Types.ObjectId(userId);
-    console.log("userID", userId)
-    console.log("matchCondition.owner", matchCondition.owner)
   }
 
   //$regex is used for case-insensitive 

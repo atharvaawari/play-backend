@@ -107,7 +107,7 @@ const loginUser = asyncHandler(async (req, res) => {
   console.log("req.body", req.body);
 
   //this is how check for data with or operator
-  if (!(email || userName)) {
+  if (!email || !userName || !password) {
     throw new ApiError(400, "username or password is required");
   }
 
